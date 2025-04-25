@@ -23,7 +23,7 @@ modules:
 
   - type: rpm-ostree
     repos:
-       - https://pkgs.tailscale.com/stable/fedora/tailscale.repo
+      - https://pkgs.tailscale.com/stable/fedora/tailscale.repo
     install:
       - fish
       - tailscale
