@@ -23,9 +23,11 @@ modules:
 
   - type: rpm-ostree
     repos:
+      - https://repository.mullvad.net/rpm/stable/mullvad.repo
       - https://pkgs.tailscale.com/stable/fedora/tailscale.repo
     install:
       - fish
+      - mullvad-vpn
       - tailscale
     remove:
       # example: removing firefox (in favor of the flatpak)
