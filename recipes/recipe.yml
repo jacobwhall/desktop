@@ -33,7 +33,6 @@ modules:
       - https://pkgs.tailscale.com/stable/fedora/tailscale.repo
     install:
       - fish
-      - fontconfig
       - mullvad-vpn
       - perf
       - tailscale
