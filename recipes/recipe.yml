@@ -36,18 +36,11 @@ modules:
       - mullvad-vpn
       - perf
       - tailscale
-    remove:
-      # example: removing firefox (in favor of the flatpak)
-      # "firefox" is the main package, "firefox-langpacks" is a dependency
-      - firefox
-      - firefox-langpacks # also remove firefox dependency (not required for all packages, this is a special case)
-
   - type: default-flatpaks@v2
     configurations:
       - scope: system
         notify: true # Send notification after install/uninstall is finished (true/false)
         install:
-          - org.mozilla.firefox
           - org.gnome.font-viewer
           - org.gnome.Loupe
           - be.alexandervanhee.gradia
