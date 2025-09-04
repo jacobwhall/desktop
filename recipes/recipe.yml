@@ -43,6 +43,7 @@ modules:
         install:
           - org.gnome.font-viewer
           - org.gnome.Loupe
+          - org.gnome.Papers
           - be.alexandervanhee.gradia
         remove:
           - org.gnome.eog
