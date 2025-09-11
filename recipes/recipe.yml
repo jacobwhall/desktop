@@ -36,7 +36,7 @@ modules:
       - mullvad-vpn
       - perf
       - tailscale
-      - gbus-dlib
+      - dlib-devel
   - type: default-flatpaks@v2
     configurations:
       - scope: system
