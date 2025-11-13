@@ -33,6 +33,8 @@ modules:
       - https://pkgs.tailscale.com/stable/fedora/tailscale.repo
     install:
       - fish
+      - gdal
+      - gdal-devel
       - mullvad-vpn
       - perf
       - tailscale
