@@ -39,7 +39,7 @@ modules:
       - perf
       - tailscale
       - dlib-devel
-      - https://github.com/cjpais/Handy/releases/download/v0.5.5/Handy-0.5.5-1.x86_64_linux.rpm
+      - https://github.com/cjpais/Handy/releases/download/v0.6.1/Handy-0.6.1-1.x86_64.rpm
   - type: default-flatpaks@v2
     configurations:
       - scope: system
