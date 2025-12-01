@@ -40,7 +40,7 @@ modules:
       - tailscale
       - xdotool
       - dlib-devel
-      - https://github.com/cjpais/Handy/releases/download/v0.6.2/Handy-0.6.2-1.x86_64.rpm
+      - https://github.com/cjpais/Handy/releases/download/v0.6.4/Handy-0.6.4-1.x86_64.rpm
   - type: default-flatpaks@v2
     configurations:
       - scope: system
