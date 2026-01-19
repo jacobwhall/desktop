@@ -39,7 +39,6 @@ modules:
       - perf
       - tailscale
       - dlib-devel
-      - wtype
       - ydotool
       - https://github.com/cjpais/Handy/releases/download/v0.6.11/Handy-0.6.11-1.x86_64.rpm
   - type: default-flatpaks@v2
