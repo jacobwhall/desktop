@@ -31,6 +31,8 @@ modules:
     repos:
       - https://repository.mullvad.net/rpm/stable/mullvad.repo
       - https://pkgs.tailscale.com/stable/fedora/tailscale.repo
+    remove:
+      - nano-default-editor
     install:
       - fish
       - gdal
@@ -60,4 +62,3 @@ modules:
       - 6139 # Tailscale QS
 
   - type: signing # this sets up the proper policy & signing files for signed images to work fully
-
