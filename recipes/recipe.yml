@@ -38,6 +38,7 @@ modules:
       - fish
       - gdal
       - gdal-devel
+      - gtk-layer-shell
       - mullvad-vpn
       - perf
       - tailscale
