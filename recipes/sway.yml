@@ -1,0 +1,84 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
+# image will be published to ghcr.io/<user>/<name>
+name: sway
+# description will be included in the image's metadata
+description: Jacob's desktop image (sway)
+
+# the base image to build on top of (FROM) and the version tag to use
+base-image: ghcr.io/wayblueorg/sway
+image-version: latest
+
+# module configuration, executed in order
+# you can include multiple instances of the same module
+modules:
+  - type: os-release
+    properties:
+      NAME: JacobsFedora
+      ID: jacobs_fedora
+      PRETTY_NAME: Fedora (Jacob's Version)
+
+  - type: files
+    files:
+      - source: system
+        destination: / # copies files/system/* (* means everything inside it) into your image's root folder /
+
+  - type: brew
+    nofile-limits: true # increase nofile limits
+    brew-analytics: false # disable telemetry
+
+  - type: rpm-ostree
+    repos:
+      - https://repository.mullvad.net/rpm/stable/mullvad.repo
+      - https://pkgs.tailscale.com/stable/fedora/tailscale.repo
+      - https://download.docker.com/linux/fedora/docker-ce.repo
+    remove:
+      - nano-default-editor
+    install:
+      - btop
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+      - fish
+      - gdal
+      - gdal-devel
+      - gtk-layer-shell
+      - mullvad-vpn
+      - perf
+      - tailscale
+      # dlib-devel removed — retired from Fedora 43
+      - vim-enhanced
+      - vim-default-editor
+      - ydotool
+      - https://github.com/cjpais/Handy/releases/download/v0.7.6/Handy-0.7.6-1.x86_64.rpm
+      - xdg-desktop-portal
+      - xdg-desktop-portal-wlr
+      - xdg-desktop-portal-gtk
+      - fuzzel
+      # cliphist not in Fedora repos — install via brew instead
+      - brightnessctl
+      - playerctl
+      - mako
+      - network-manager-applet
+      - mate-polkit
+      - libappindicator-gtk3
+  - type: default-flatpaks@v2
+    configurations:
+      - scope: system
+        notify: true # Send notification after install/uninstall is finished (true/false)
+        install:
+          - org.gnome.font-viewer
+          - org.gnome.Loupe
+          - org.gnome.Papers
+          - be.alexandervanhee.gradia
+        remove:
+          - org.gnome.eog
+
+  - type: files
+    files:
+      - source: sway-portals.conf
+        destination: /usr/share/xdg-desktop-portal/sway-portals.conf
+
+  - type: signing # this sets up the proper policy & signing files for signed images to work fully
