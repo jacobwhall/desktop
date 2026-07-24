@@ -25,3 +25,11 @@ A fresh image is built every day using GitHub Actions. Since this image is built
 
 1. `rpm-ostree upgrade`
 2. Reboot to apply upgrade
+
+## Coder image
+
+`coder/Containerfile` is unrelated to the desktop images: it is a plain (non-bootable) OCI container used as the inner image for a [Coder](https://coder.com) envbox workspace.
+It builds on `registry.fedoraproject.org/fedora` rather than a BlueBuild recipe, so it has its own workflow (`.github/workflows/coder.yml`) and publishes to `ghcr.io/jacobwhall/coder`, tagged by Fedora release (`:43`, `:44`, `:latest`).
+
+It carries the command-line half of the desktop images — fish as the login shell, vim as `$EDITOR`, Homebrew, btop — plus docker-ce and a `runc` pin that envbox's sysbox requires.
+The workspace user is `jacob` (uid 1000, home `/home/jacob`), not the conventional `coder`, so a Coder template using this image must set `CODER_INNER_USERNAME` and its home volume mount to match.

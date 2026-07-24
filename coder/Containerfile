@@ -1,0 +1,119 @@
+# Fedora-based Coder envbox inner image.
+#
+# The "inner" image is what a Coder workspace runs as inside envbox; the outer
+# envbox image (ghcr.io/coder/envbox) provides sysbox and is untouched. This
+# image must be Coder-workspace-ready:
+#   - a workspace user (uid 1000) with a home under /home and passwordless sudo.
+#     The name is a contract with the template: it must set
+#     CODER_INNER_USERNAME and mount the home volume to match, because envbox
+#     looks the user up and chowns that home. This image uses 'jacob' rather
+#     than the conventional 'coder' — see the inner_username parameter in
+#     nova-fluxcd's workspace-template-envbox,
+#   - bootstrap tooling the agent + code-server need,
+#   - docker-ce with runc pinned to 1.2.x (sysbox 0.6.7, bundled in envbox, is
+#     incompatible with runc >= 1.3.3 — see the nova-fluxcd envbox template README).
+#
+# Beyond that it carries the command-line half of the desktop images in this
+# repo (recipes/recipe.yml, recipes/sway.yml): the same shell, editor and
+# Homebrew setup, minus everything that only makes sense on a real desktop
+# (Sway/GTK/portals, Mullvad, Slack, Handy, ydotool) or under a real kernel.
+
+ARG FEDORA_VERSION=44
+FROM registry.fedoraproject.org/fedora:${FEDORA_VERSION}
+
+# Bootstrap tooling for the Coder agent + code-server, plus dev niceties.
+RUN dnf -y install \
+      bash curl ca-certificates sudo tar gzip git \
+      procps-ng iproute hostname which findutils \
+ && dnf clean all
+
+# Shell and editor parity with the desktop recipes. vim-default-editor drops a
+# profile.d snippet setting EDITOR=vim; the desktop images pair it with removing
+# nano-default-editor, which this base image does not ship in the first place.
+# 'file' is a Homebrew prerequisite (see below).
+RUN dnf -y install \
+      btop fish vim-enhanced vim-default-editor file \
+ && dnf clean all
+
+# General command-line tooling for a dev workspace.
+#
+RUN dnf -y install \
+      ripgrep jq yq tmux rsync unzip \
+      gcc gcc-c++ make pkgconf \
+ && dnf clean all
+
+# The workspace user (uid 1000) with passwordless sudo. uid 1000 is fixed —
+# envbox and the home volume both assume it — but the name is a build arg so a
+# rebuild can produce an image for a differently-named template.
+#
+# Login shell is fish, as on the desktop. This only affects interactive sessions
+# — the Coder agent runs its startup scripts under sh regardless — so anything
+# the image must expose to non-interactive shells goes in ENV, not a fish config.
+ARG USERNAME=jacob
+RUN useradd -u 1000 -m -s /usr/bin/fish "${USERNAME}" \
+ && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/${USERNAME}" \
+ && chmod 0440 "/etc/sudoers.d/${USERNAME}"
+
+# Docker CE from docker.com (uses runc, unlike Fedora's default moby/crun). The
+# .repo file is fetched directly so this works across dnf4/dnf5.
+RUN curl -fsSL https://download.docker.com/linux/fedora/docker-ce.repo \
+      -o /etc/yum.repos.d/docker-ce.repo \
+ && dnf -y install docker-ce docker-ce-cli containerd.io \
+      docker-buildx-plugin docker-compose-plugin \
+ && dnf clean all \
+ && usermod -aG docker "${USERNAME}"
+
+# Force the nftables iptables backend. docker-ce's RPM only Requires: iptables,
+# which Fedora satisfies with iptables-legacy — and legacy needs the 'ip_tables'
+# kernel module, which an unprivileged container under sysbox cannot modprobe.
+# dockerd then dies at startup with:
+#   failed to register "bridge" driver: failed to create NAT chain DOCKER:
+#   modprobe: ERROR: could not insert 'ip_tables': Operation not permitted
+#   iptables v1.8.11 (legacy): can't initialize iptables table `nat'
+# The nft backend needs no such module and works inside sysbox.
+RUN dnf -y install iptables-nft \
+ && dnf clean all \
+ && alternatives --set iptables /usr/sbin/iptables-nft \
+ && iptables --version | grep -q nf_tables
+
+# Pin runc to 1.2.x — sysbox 0.6.7 breaks with runc >= 1.3.3. Overwrite the
+# containerd.io-provided binary; a built image doesn't dnf-upgrade at runtime,
+# so this sticks. Bump only once envbox ships a sysbox that supports runc 1.3.x.
+ARG RUNC_VERSION=v1.2.6
+RUN curl -fsSL -o /usr/bin/runc \
+      "https://github.com/opencontainers/runc/releases/download/${RUNC_VERSION}/runc.amd64" \
+ && chmod 0755 /usr/bin/runc \
+ && runc --version
+
+# The desktop recipes' brew module sets nofile-limits: true. There is no systemd
+# here to raise DefaultLimitNOFILE, so this covers the PAM half only — it applies
+# to login sessions (ssh, su), not to processes the Coder agent spawns directly,
+# whose limits come from the container runtime.
+RUN printf '%s\n' \
+      '* soft nofile 65536' \
+      '* hard nofile 65536' \
+      > /etc/security/limits.d/50-nofile.conf
+
+USER ${USERNAME}
+
+# Homebrew, matching the desktop recipes' brew module. Installed as the
+# workspace user because the installer refuses to run as root; it lands in
+# /home/linuxbrew, deliberately outside that user's home, so it survives envbox
+# mounting a volume over the workspace home. HOMEBREW_NO_ANALYTICS is the ENV
+# equivalent of the module's brew-analytics: false, and applies at runtime as
+# well as during build.
+ENV HOMEBREW_NO_ANALYTICS=1
+RUN NONINTERACTIVE=1 /bin/bash -c \
+      "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" \
+ && /home/linuxbrew/.linuxbrew/bin/brew --version
+
+# Claude Code, via Anthropic's official installer. It is a per-user install
+# ($HOME/.local/bin/claude, self-updating from there), so it runs as the
+# workspace user rather than root — under root it would land in /root and be
+# invisible. The installer does not edit any shell rc during a container
+# build (it just warns that ~/.local/bin is off PATH), so ENV supplies it — and
+# ENV also covers non-interactive shells, which an rc edit would not.
+RUN curl -fsSL https://claude.ai/install.sh | bash \
+ && ~/.local/bin/claude --version
+
+ENV PATH=/home/${USERNAME}/.local/bin:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:$PATH
