@@ -94,6 +94,17 @@ RUN printf '%s\n' \
       '* hard nofile 65536' \
       > /etc/security/limits.d/50-nofile.conf
 
+# Pre-create the Homebrew prefix, owned by the workspace user. The installer
+# below runs unprivileged and would otherwise reach for sudo to create
+# /home/linuxbrew — and sudo does not work inside the buildx sandbox on the CI
+# runner, even though this user has passwordless sudo at runtime, so the build
+# aborted with "Insufficient permissions to install Homebrew to
+# /home/linuxbrew/.linuxbrew (the default prefix)". install.sh skips the sudo
+# check entirely when the prefix is already writable, and falls back to running
+# its commands directly wherever it would have used sudo.
+RUN mkdir -p /home/linuxbrew/.linuxbrew \
+ && chown -R "${USERNAME}:${USERNAME}" /home/linuxbrew
+
 USER ${USERNAME}
 
 # Homebrew, matching the desktop recipes' brew module. Installed as the
