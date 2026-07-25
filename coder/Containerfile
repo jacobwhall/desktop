@@ -114,13 +114,30 @@ RUN NONINTERACTIVE=1 /bin/bash -c \
       "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" \
  && /home/linuxbrew/.linuxbrew/bin/brew --version
 
-# Claude Code, via Anthropic's official installer. It is a per-user install
-# ($HOME/.local/bin/claude, self-updating from there), so it runs as the
-# workspace user rather than root — under root it would land in /root and be
-# invisible. The installer does not edit any shell rc during a container
-# build (it just warns that ~/.local/bin is off PATH), so ENV supplies it — and
-# ENV also covers non-interactive shells, which an rc edit would not.
-RUN curl -fsSL https://claude.ai/install.sh | bash \
- && ~/.local/bin/claude --version
-
+# Put brew (and the user's own bin) on PATH for the rest of the build, and at
+# runtime — ENV also covers non-interactive shells, which a shell rc edit would
+# not.
 ENV PATH=/home/${USERNAME}/.local/bin:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:$PATH
+
+# Claude Code, kubectl and Tilt, all via brew so they land under /home/linuxbrew.
+#
+# Claude Code was previously installed with Anthropic's own installer
+# (claude.ai/install.sh), but that is a per-user install into
+# $HOME/.local/bin — which envbox mounts the workspace home volume straight
+# over, so the binary was gone by the time a workspace started and 'claude' was
+# not a recognized command. The brew cask installs to the Caskroom with a
+# symlink at /home/linuxbrew/.linuxbrew/bin/claude, outside the home, for the
+# same reason brew itself lives there. It is a cask rather than a formula even
+# on Linux; recent Homebrew supports Linux casks and this one ships
+# x86_64_linux/arm64_linux variations.
+#
+# 'kubectl' is an alias for the kubernetes-cli formula. Tilt is brew rather than
+# tilt.dev's install.sh because that script installs to /usr/local/bin via sudo,
+# which does not work in the buildx sandbox on the CI runner (see the Homebrew
+# prefix note above).
+RUN brew install --cask claude-code \
+ && brew install kubectl tilt \
+ && brew cleanup --prune=all \
+ && claude --version \
+ && kubectl version --client \
+ && tilt version
