@@ -38,17 +38,13 @@ RUN dnf -y install \
 # General command-line tooling for a dev workspace.
 #
 RUN dnf -y install \
-      ripgrep jq yq tmux rsync unzip \
+      bind-utils iputils ripgrep jq yq tmux rsync unzip \
       gcc gcc-c++ make pkgconf \
  && dnf clean all
 
 # The workspace user (uid 1000) with passwordless sudo. uid 1000 is fixed —
 # envbox and the home volume both assume it — but the name is a build arg so a
 # rebuild can produce an image for a differently-named template.
-#
-# Login shell is fish, as on the desktop. This only affects interactive sessions
-# — the Coder agent runs its startup scripts under sh regardless — so anything
-# the image must expose to non-interactive shells goes in ENV, not a fish config.
 ARG USERNAME=jacob
 RUN useradd -u 1000 -m -s /usr/bin/fish "${USERNAME}" \
  && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/${USERNAME}" \
