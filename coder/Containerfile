@@ -23,21 +23,9 @@ FROM registry.fedoraproject.org/fedora:${FEDORA_VERSION}
 
 # Bootstrap tooling for the Coder agent + code-server, plus dev niceties.
 RUN dnf -y install \
-      bash curl ca-certificates sudo tar gzip git \
+      bash curl ca-certificates sudo tar gzip git tmux\
       procps-ng iproute hostname which findutils \
- && dnf clean all
-
-# Shell and editor parity with the desktop recipes. vim-default-editor drops a
-# profile.d snippet setting EDITOR=vim; the desktop images pair it with removing
-# nano-default-editor, which this base image does not ship in the first place.
-# 'file' is a Homebrew prerequisite (see below).
-RUN dnf -y install \
       btop fish vim-enhanced vim-default-editor file \
- && dnf clean all
-
-# General command-line tooling for a dev workspace.
-#
-RUN dnf -y install \
       bind-utils iputils ripgrep jq yq tmux rsync unzip \
       gcc gcc-c++ make pkgconf \
  && dnf clean all
