@@ -56,7 +56,7 @@ jobs:
       - name: Log in to GHCR
         # Skip on PRs from forks, which can't get a write-scoped token.
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
