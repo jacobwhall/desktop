@@ -48,7 +48,7 @@ modules:
       - mullvad-vpn
       - perf
       - tailscale
-      - dlib-devel
+      # dlib-devel removed — retired from Fedora 43
       - vim-enhanced
       - vim-default-editor
       - ydotool
