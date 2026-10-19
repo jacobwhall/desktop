@@ -44,6 +44,8 @@ modules:
       - fish
       - gdal
       - gdal-devel
+      - gcc-c++
+      - make
       - gtk-layer-shell
       - mullvad-vpn
       - perf
