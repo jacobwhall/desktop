@@ -1,0 +1,22 @@
+#!/bin/sh
+# Keep NVIDIA GPUs powered while on AC so app launches don't wait ~1.5s for
+# the GPU to wake from runtime suspend; let them suspend again on battery.
+# Run by /usr/lib/udev/rules.d/99-nvidia-ac-pm.rules.
+
+mode=auto
+for ps in /sys/class/power_supply/*; do
+    if [ "$(cat "$ps/type" 2>/dev/null)" = Mains ] && [ "$(cat "$ps/online" 2>/dev/null)" = 1 ]; then
+        mode=on
+    fi
+done
+
+for dev in /sys/bus/pci/devices/*; do
+    [ "$(cat "$dev/vendor")" = 0x10de ] || continue
+    case "$(cat "$dev/class")" in
+        0x030000 | 0x030200) ;;
+        *) continue ;;
+    esac
+    # only manage GPUs with a driver bound; the NVIDIA rules force "on" when unbound
+    [ -e "$dev/driver" ] || continue
+    echo "$mode" >"$dev/power/control"
+done

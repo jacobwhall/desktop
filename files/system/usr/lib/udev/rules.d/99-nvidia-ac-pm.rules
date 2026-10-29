@@ -1,0 +1,5 @@
+# Keep NVIDIA GPUs powered on AC, allow runtime suspend on battery.
+# The bind rule re-applies the choice after 60-nvidia.rules and
+# 90-supergfxd-nvidia-pm.rules reset power/control to "auto".
+ACTION=="add|change", SUBSYSTEM=="power_supply", ATTR{type}=="Mains", RUN+="/usr/libexec/nvidia-ac-pm"
+ACTION=="bind", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030000|0x030200", RUN+="/usr/libexec/nvidia-ac-pm"
