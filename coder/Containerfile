@@ -124,7 +124,7 @@ ENV PATH=/home/${USERNAME}/.local/bin:/home/linuxbrew/.linuxbrew/bin:/home/linux
 # which does not work in the buildx sandbox on the CI runner (see the Homebrew
 # prefix note above).
 RUN brew install --cask claude-code \
- && brew install kubectl tilt \
+ && brew install helm kubectl tilt \
  && brew cleanup --prune=all \
  && claude --version \
  && kubectl version --client \
